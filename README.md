@@ -19,7 +19,7 @@ MCP servers are defined inline in each agent's frontmatter — no tool descripti
 
 ```bash
 /plugin marketplace add JimmyWigerstedt/Unimind
-/plugin install claude-memory-system
+/plugin install unimind
 ```
 
 ### 2. Run setup

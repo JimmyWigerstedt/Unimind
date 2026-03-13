@@ -1,7 +1,7 @@
 {
   "plugins": [
     {
-      "name": "claude-memory-system",
+      "name": "unimind",
       "description": "Organizational memory for Claude — persistent knowledge across conversations via Detective, Archivist, and Ingestion sub-agents.",
       "version": "0.3.0",
       "path": "."
