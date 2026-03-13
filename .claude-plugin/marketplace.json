@@ -1,10 +1,14 @@
 {
+  "name": "unimind-marketplace",
+  "owner": {
+    "name": "Jimmy Wigerstedt"
+  },
   "plugins": [
     {
       "name": "unimind",
+      "source": ".",
       "description": "Organizational memory for Claude — persistent knowledge across conversations via Detective, Archivist, and Ingestion sub-agents.",
-      "version": "0.3.0",
-      "path": "."
+      "version": "0.3.0"
     }
   ]
 }
