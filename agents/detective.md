@@ -14,6 +14,8 @@ mcpServers:
   - vault-read:
       type: url
       url: "${MEMORY_MCP_URL}/mcp/read/mcp"
+      headers:
+        Authorization: "Bearer ${MCP_AUTH_TOKEN}"
 ---
 
 You are the vault detective. Your job is to find relevant information

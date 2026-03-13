@@ -11,6 +11,8 @@ mcpServers:
   - vault-write:
       type: url
       url: "${MEMORY_MCP_URL}/mcp/write/mcp"
+      headers:
+        Authorization: "Bearer ${MCP_AUTH_TOKEN}"
 ---
 
 # Upload Media to Memory System

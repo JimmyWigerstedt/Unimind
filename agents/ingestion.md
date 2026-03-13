@@ -17,9 +17,13 @@ mcpServers:
   - vault-read:
       type: url
       url: "${MEMORY_MCP_URL}/mcp/read/mcp"
+      headers:
+        Authorization: "Bearer ${MCP_AUTH_TOKEN}"
   - vault-write:
       type: url
       url: "${MEMORY_MCP_URL}/mcp/write/mcp"
+      headers:
+        Authorization: "Bearer ${MCP_AUTH_TOKEN}"
 ---
 
 You are the vault ingestion agent. Your job is to read source documents,
