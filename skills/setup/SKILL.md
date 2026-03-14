@@ -4,7 +4,7 @@ description: >
   First-time setup for the Unimind plugin. Configures the server URL, auth
   token, MCP permissions, and organization name. Run once after installing.
   Safe to re-run.
-allowed-tools: Read, Write, Edit, Bash(python *)
+allowed-tools: Read, Write, Edit, Bash(python *), AskUserQuestion
 ---
 
 # Unimind Setup
@@ -12,35 +12,35 @@ allowed-tools: Read, Write, Edit, Bash(python *)
 Walk the user through first-time configuration. This is idempotent — running
 it again updates existing settings without harm.
 
-## Step 1: Ask for server URL
+IMPORTANT: For every question to the user, use the AskUserQuestion tool.
+Do not use plain text output to ask questions.
 
-Ask the user for their Memory System server URL. Example:
-`https://your-app.up.railway.app`
+## Step 1: Server URL
+
+Use AskUserQuestion to ask for their Unimind server URL.
+Example: `https://your-app.up.railway.app`
 
 If they don't have one yet, let them know they need to deploy the Unimind
 server first and come back when they have a URL.
 
-## Step 2: Ask for auth token
+## Step 2: Auth token
 
-Ask the user for their MCP auth token. This is the Bearer token used to
-authenticate against the Memory System server. It was generated when the
-server was deployed (the `MCP_AUTH_TOKEN` env var on the server side, or
-a per-user token from the `_users` table).
+Use AskUserQuestion to ask for their auth token. Tell them:
+"You should have received an auth token from your system administrator.
+If you're the admin, it's the MCP_AUTH_TOKEN value in your server's
+environment variables."
 
-If they don't have one, explain they can find it in their server's Railway
-environment variables (`MCP_AUTH_TOKEN`).
+## Step 3: Organization name
 
-## Step 3: Ask for organization name
+Use AskUserQuestion to ask what organization or team this memory system
+serves. Example: "Acme Corp", "Backend Team".
 
-Ask what organization or team this memory system serves. This helps the
-agents contextualize information. Example: "Acme Corp", "Backend Team".
+## Step 4: Platform
 
-## Step 4: Set environment variables
-
-Ask the user what platform they're on:
-- **Claude Code in an IDE** (VS Code, Cursor, etc.) — on Mac or Windows?
-- **Claude Code CLI** (terminal) — on Mac, Linux, or Windows?
-- **Claude Desktop app** — on Mac or Windows?
+Use AskUserQuestion to ask what platform they're on:
+- Claude Code in an IDE (VS Code, Cursor, etc.) — Mac or Windows?
+- Claude Code CLI (terminal) — Mac, Linux, or Windows?
+- Claude Desktop — Mac or Windows?
 
 Then set `MEMORY_MCP_URL` and `MCP_AUTH_TOKEN` using the approach that fits:
 
