@@ -1,6 +1,6 @@
 {
   "name": "unimind",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Organizational memory for Claude — dual-layer storage (knowledge vault + structured data) with multimodal media ingestion, operated by Detective (read) and Archivist (write) sub-agents via MCP.",
   "author": {
     "name": "Revenue AI Agency"

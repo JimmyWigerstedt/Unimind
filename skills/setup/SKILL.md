@@ -4,7 +4,7 @@ description: >
   First-time setup for the Unimind plugin. Configures the server URL, auth
   token, MCP permissions, and organization name. Run once after installing.
   Safe to re-run.
-allowed-tools: Read, Write, Edit, Bash(python *), AskUserQuestion
+allowed-tools: Read, Write, Edit, Bash(python *), Bash(setx *)
 ---
 
 # Unimind Setup
@@ -12,62 +12,93 @@ allowed-tools: Read, Write, Edit, Bash(python *), AskUserQuestion
 Walk the user through first-time configuration. This is idempotent — running
 it again updates existing settings without harm.
 
-IMPORTANT: For every question to the user, use the AskUserQuestion tool.
-Do not use plain text output to ask questions.
+IMPORTANT: YOU do all the work. Do not give the user manual instructions and
+ask them to do it themselves. You have the tools — read files, write files,
+edit files, run scripts. Use them. The user should only need to answer your
+questions and confirm the result.
 
-## Step 1: Server URL
+## Step 1: Collect information
 
-Use AskUserQuestion to ask for their Unimind server URL.
-Example: `https://your-app.up.railway.app`
+Ask the user three things (you can ask all at once):
+1. **Server URL** — their Unimind server URL (e.g., `https://your-app.up.railway.app`)
+2. **Auth token** — the MCP auth token from their server admin or Railway env vars
+3. **Organization name** — what org/team this serves (e.g., "Acme Corp")
 
-If they don't have one yet, let them know they need to deploy the Unimind
-server first and come back when they have a URL.
+## Step 2: Set environment variables
 
-## Step 2: Auth token
+You MUST set both `MEMORY_MCP_URL` and `MCP_AUTH_TOKEN` as persistent
+environment variables. Do not tell the user how to do it — do it yourself.
 
-Use AskUserQuestion to ask for their auth token. Tell them:
-"You should have received an auth token from your system administrator.
-If you're the admin, it's the MCP_AUTH_TOKEN value in your server's
-environment variables."
+**Detect the platform** from your environment (check `sys.platform`, look for
+Claude Desktop config files, etc.) and act accordingly:
 
-## Step 3: Organization name
-
-Use AskUserQuestion to ask what organization or team this memory system
-serves. Example: "Acme Corp", "Backend Team".
-
-## Step 4: Platform
-
-Use AskUserQuestion to ask what platform they're on:
-- Claude Code in an IDE (VS Code, Cursor, etc.) — Mac or Windows?
-- Claude Code CLI (terminal) — Mac, Linux, or Windows?
-- Claude Desktop — Mac or Windows?
-
-Then set `MEMORY_MCP_URL` and `MCP_AUTH_TOKEN` using the approach that fits:
-
-**Mac/Linux (terminal or IDE):**
-Append export lines to their shell profile (`~/.zshrc` for macOS, `~/.bashrc`
-for Linux). Use the Bash tool to append if not already present.
-
-**Windows (terminal or IDE):**
-Use `setx` via the Bash tool to set persistent environment variables:
+### Windows (any client):
+Run via Bash:
 ```bash
 setx MEMORY_MCP_URL "<url>"
 setx MCP_AUTH_TOKEN "<token>"
 ```
 
-**Claude Desktop (any platform):**
-Environment variables must be set in the Claude Desktop config file. Guide the
-user to their settings and tell them to add `MEMORY_MCP_URL` and
-`MCP_AUTH_TOKEN` there. If you can locate the config file, offer to edit it.
+### Mac/Linux (any client):
+Detect the shell from `$SHELL`. Append to the correct profile file
+(`~/.zshrc`, `~/.bashrc`, or fish config). Read the file first to avoid
+duplicates — only append if the variable isn't already present:
+```bash
+echo 'export MEMORY_MCP_URL="<url>"' >> ~/.zshrc
+echo 'export MCP_AUTH_TOKEN="<token>"' >> ~/.zshrc
+```
 
-After persisting, also export both variables in the current session so setup
-can continue without a restart.
+### Claude Desktop (additional step — REQUIRED):
+Claude Desktop does NOT support Streamable HTTP MCP transport directly. It
+needs `mcp-remote` as a bridge. You MUST add MCP server entries to the
+Claude Desktop config.
 
-## Step 5: Grant MCP tool permissions
+Find the config file:
+- **Mac**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 
-Run this Python script to add MCP tool permissions to the user's Claude Code
-settings. This allows the memory agents to call MCP tools without prompting:
+READ it first. Then EDIT it to add `vault-read` and `vault-write` to the
+`mcpServers` object. Do NOT overwrite existing servers — merge carefully.
 
+The entries must use `mcp-remote` via npx:
+```json
+{
+  "mcpServers": {
+    "vault-read": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "<MEMORY_MCP_URL>/mcp/read/mcp",
+        "--header",
+        "Authorization: Bearer <MCP_AUTH_TOKEN>"
+      ]
+    },
+    "vault-write": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "<MEMORY_MCP_URL>/mcp/write/mcp",
+        "--header",
+        "Authorization: Bearer <MCP_AUTH_TOKEN>"
+      ]
+    }
+  }
+}
+```
+
+Replace `<MEMORY_MCP_URL>` and `<MCP_AUTH_TOKEN>` with the actual values
+(not env var references — Claude Desktop doesn't expand env vars in args).
+
+After persisting, also export both variables in the current session so the
+rest of setup works without a restart.
+
+## Step 3: Grant MCP tool permissions
+
+Read `~/.claude/settings.json` (create it if it doesn't exist). Add
+`mcp__vault-read__*` and `mcp__vault-write__*` to `permissions.allow` if
+not already present. Write the file back.
+
+Use this Python script:
 ```bash
 python -c "
 import json
@@ -93,30 +124,25 @@ print('Permissions updated: ' + str(settings_path))
 "
 ```
 
-## Step 6: Update orchestrator with org name
+## Step 4: Update orchestrator with org name
 
-Read the orchestrator agent file and update the first line to include the
-organization name:
-
-Change:
+Read the orchestrator agent file. Find the line:
 ```
 You are a general-purpose assistant backed by an organizational memory system.
 ```
 
-To:
+Edit it to:
 ```
 You are a general-purpose assistant for <ORG NAME>, backed by an organizational memory system.
 ```
 
-Use the Edit tool to make this change in the orchestrator agent file.
+Use the Edit tool. Do not ask the user to do this.
 
-## Step 7: Verify
+## Step 5: Confirm
 
-Tell the user setup is complete. Summarize what was configured:
+Tell the user setup is complete. Summarize:
 - Server URL: `<url>`
-- Auth token: configured (don't echo the token back)
+- Auth token: set (do NOT echo the token)
 - Organization: `<name>`
-- MCP permissions granted for `vault-read` and `vault-write`
-- They need to restart their Claude session for environment variables to take effect
-
-If anything failed, tell them what to fix manually.
+- MCP permissions: granted
+- Note: restart the Claude session for env vars to take effect
