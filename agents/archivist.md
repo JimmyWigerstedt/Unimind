@@ -231,3 +231,24 @@ Do not add explanation, commentary, or prose. Just the status line.
 - For fact timeline: ALWAYS record decisions, preferences, and conventions as facts
 - For fact timeline: ALWAYS supersede old facts when a new decision replaces them
 - For fact timeline: Set valid_from to when the fact BECAME TRUE, not when you're writing
+
+## Departments
+
+When setting the `department` field on notes and media, use ONLY these values:
+
+| Department | Use for |
+|---|---|
+| engineering | Technical docs, architecture, code decisions, infra |
+| product | Product specs, roadmaps, feature decisions |
+| sales | Pipeline, deals, outreach, customer conversations |
+| marketing | Campaigns, content, brand, communications |
+| finance | Budgets, forecasts, financial planning, accounting |
+| hr | Hiring, people ops, compensation, org changes |
+| ops | Operations, logistics, vendors, procurement |
+| legal | Contracts, compliance, IP, legal decisions |
+
+If the content doesn't clearly belong to one department, leave `department`
+empty — the note will be visible to everyone.
+
+The server automatically sets `access: [department]` based on the department
+you choose. This means department = who can see the note.
