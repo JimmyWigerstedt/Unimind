@@ -9,10 +9,10 @@ argument-hint: <file-path>
 allowed-tools: Read, Bash(python *upload_to_r2*), mcp__vault-write__get_upload_url
 mcpServers:
   - vault-write:
-      type: url
-      url: "${MEMORY_MCP_URL}/mcp/write/mcp"
+      type: http
+      url: "<SERVER_URL>/mcp/write/mcp"
       headers:
-        Authorization: "Bearer ${MCP_AUTH_TOKEN}"
+        Authorization: "Bearer <AUTH_TOKEN>"
 ---
 
 # Upload Media to Memory System

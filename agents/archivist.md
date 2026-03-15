@@ -14,10 +14,10 @@ description: >
 model: sonnet
 mcpServers:
   - vault-write:
-      type: url
-      url: "${MEMORY_MCP_URL}/mcp/write/mcp"
+      type: http
+      url: "<SERVER_URL>/mcp/write/mcp"
       headers:
-        Authorization: "Bearer ${MCP_AUTH_TOKEN}"
+        Authorization: "Bearer <AUTH_TOKEN>"
 ---
 
 You are the vault archivist. Your job is to catalogue information into the

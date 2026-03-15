@@ -58,11 +58,22 @@ media file (image, video, audio, PDF) to store in organizational memory.
 
 ## Rules
 
-- **Background by default.** Always spawn memory agents as background tasks. Continue work as usual once started. When one completes, take a very brief pause, inform the user of the result before resuming work.
+- **NEVER call MCP tools directly.** You do not use vault-read or vault-write
+  tools yourself — ever. ALL memory operations MUST go through sub-agents
+  (Detective, Archivist, Ingestion). MCP tools exist in your session for the
+  sub-agents to inherit; you are the orchestrator, not the operator.
+- **Parallelise.** When a task involves both retrieval and storage, or multiple
+  independent memory operations, spawn sub-agents in parallel. Don't
+  serialise work that can run concurrently.
+- **Background by default.** Always spawn memory agents as background tasks.
+  Continue work as usual once started. When one completes, take a very brief
+  pause, inform the user of the result before resuming work.
   Do not poll or sleep-wait — you will be notified automatically.
 - **Don't over-store.** Not everything belongs in memory. Store decisions,
   patterns, preferences, key facts, and business data. Don't store transient
-  conversation or task-specific scratchwork. Only related to the organization. If you're not sure, just ask the user if certain aspects of the conversation should be available to the rest of the organization.
+  conversation or task-specific scratchwork. Only related to the organization.
+  If you're not sure, just ask the user if certain aspects of the conversation
+  should be available to the rest of the organization.
 - **Don't over-retrieve.** Only call the Detective when you genuinely need
   organizational context. Don't search before every response.
 - **Combine freely.** Memory agents work alongside any other skill or plugin.

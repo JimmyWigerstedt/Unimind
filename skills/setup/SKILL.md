@@ -24,75 +24,7 @@ Ask the user three things (you can ask all at once):
 2. **Auth token** — the MCP auth token from their server admin or Railway env vars
 3. **Organization name** — what org/team this serves (e.g., "Acme Corp")
 
-## Step 2: Set environment variables
-
-You MUST set both `MEMORY_MCP_URL` and `MCP_AUTH_TOKEN` as persistent
-environment variables. Do not tell the user how to do it — do it yourself.
-
-**Detect the platform** from your environment (check `sys.platform`, look for
-Claude Desktop config files, etc.) and act accordingly:
-
-### Windows (any client):
-Run via Bash:
-```bash
-setx MEMORY_MCP_URL "<url>"
-setx MCP_AUTH_TOKEN "<token>"
-```
-
-### Mac/Linux (any client):
-Detect the shell from `$SHELL`. Append to the correct profile file
-(`~/.zshrc`, `~/.bashrc`, or fish config). Read the file first to avoid
-duplicates — only append if the variable isn't already present:
-```bash
-echo 'export MEMORY_MCP_URL="<url>"' >> ~/.zshrc
-echo 'export MCP_AUTH_TOKEN="<token>"' >> ~/.zshrc
-```
-
-### Claude Desktop (additional step — REQUIRED):
-Claude Desktop does NOT support Streamable HTTP MCP transport directly. It
-needs `mcp-remote` as a bridge. You MUST add MCP server entries to the
-Claude Desktop config.
-
-Find the config file:
-- **Mac**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
-
-READ it first. Then EDIT it to add `vault-read` and `vault-write` to the
-`mcpServers` object. Do NOT overwrite existing servers — merge carefully.
-
-The entries must use `mcp-remote` via npx:
-```json
-{
-  "mcpServers": {
-    "vault-read": {
-      "command": "npx",
-      "args": [
-        "mcp-remote",
-        "<MEMORY_MCP_URL>/mcp/read/mcp",
-        "--header",
-        "Authorization: Bearer <MCP_AUTH_TOKEN>"
-      ]
-    },
-    "vault-write": {
-      "command": "npx",
-      "args": [
-        "mcp-remote",
-        "<MEMORY_MCP_URL>/mcp/write/mcp",
-        "--header",
-        "Authorization: Bearer <MCP_AUTH_TOKEN>"
-      ]
-    }
-  }
-}
-```
-
-Replace `<MEMORY_MCP_URL>` and `<MCP_AUTH_TOKEN>` with the actual values
-(not env var references — Claude Desktop doesn't expand env vars in args).
-
-After persisting, also export both variables in the current session so the
-rest of setup works without a restart.
-
-## Step 3: Grant MCP tool permissions
+## Step 2: Grant MCP tool permissions
 
 Read `~/.claude/settings.json` (create it if it doesn't exist). Add
 `mcp__vault-read__*` and `mcp__vault-write__*` to `permissions.allow` if
@@ -124,9 +56,24 @@ print('Permissions updated: ' + str(settings_path))
 "
 ```
 
-## Step 4: Update orchestrator with org name
+## Step 3: Configure agent and skill files
 
-Read the orchestrator agent file. Find the line:
+Edit ALL files with MCP placeholders to replace them with the actual values
+from Step 1. The files are:
+
+- `agents/detective.md`
+- `agents/archivist.md`
+- `agents/ingestion.md`
+- `skills/upload-media/SKILL.md`
+
+In each file, replace:
+- `<SERVER_URL>` with the server URL (e.g., `https://mcpbrain.up.railway.app`)
+- `<AUTH_TOKEN>` with the auth token
+
+Use the Edit tool with `replace_all: true` for each placeholder across each
+file. The files use `type: http` — do not change that.
+
+Also update the orchestrator (`agents/orchestrator.md`). Find the line:
 ```
 You are a general-purpose assistant backed by an organizational memory system.
 ```
@@ -136,13 +83,58 @@ Edit it to:
 You are a general-purpose assistant for <ORG NAME>, backed by an organizational memory system.
 ```
 
-Use the Edit tool. Do not ask the user to do this.
+## Step 4: Install agents
+
+Copy all agent files from the plugin's `agents/` directory into the project's
+`.claude/agents/` directory. This ensures Claude Code discovers and loads them
+on session start (the plugin's own `settings.json` agent activation is
+unreliable, especially on Windows and Claude Desktop).
+
+This step MUST come after Step 3 so the credentials and org name are already
+baked into the agents before they get copied.
+
+After copying, ensure `.claude/agents/` is in `.gitignore` (the copied agent
+files contain hardcoded credentials). Read `.gitignore` if it exists, check
+if `.claude/agents/` is already listed. If not, append it. If `.gitignore`
+doesn't exist, create it with `.claude/agents/` as the first entry.
+
+Use this Python script:
+```bash
+python -c "
+import shutil
+from pathlib import Path
+import os
+
+plugin_dir = os.environ.get('CLAUDE_PLUGIN_DIR', '')
+if not plugin_dir:
+    for candidate in [Path('.'), Path('CLIENT')]:
+        if (candidate / 'agents').is_dir():
+            plugin_dir = str(candidate)
+            break
+
+agents_src = Path(plugin_dir) / 'agents'
+agents_dst = Path('.claude') / 'agents'
+agents_dst.mkdir(parents=True, exist_ok=True)
+
+copied = []
+for f in agents_src.glob('*.md'):
+    shutil.copy2(f, agents_dst / f.name)
+    copied.append(f.name)
+
+print(f'Installed {len(copied)} agents to {agents_dst}: {", ".join(copied)}')
+"
+```
+
+If the script can't find the plugin agents directory, fall back to using the
+Read and Write tools to copy each agent file manually.
 
 ## Step 5: Confirm
 
 Tell the user setup is complete. Summarize:
 - Server URL: `<url>`
-- Auth token: set (do NOT echo the token)
+- Auth token: configured (do NOT echo the token)
 - Organization: `<name>`
 - MCP permissions: granted
-- Note: restart the Claude session for env vars to take effect
+- Agents installed to `.claude/agents/`
+- `.gitignore` updated
+- **Restart required:** Fully quit and reopen Claude for agents and MCP permissions to take effect. A new conversation is not enough — the app must be restarted. On Desktop, make sure to also quit from the system tray (the icon area near the clock) — closing the window may leave the app running in the background.
