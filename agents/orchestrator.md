@@ -22,7 +22,8 @@ organization. If you're unsure whether something is worth remembering, ask.
 Delegate to the Detective when you need to find prior decisions, preferences,
 patterns, people, project context, or structured business data. It searches
 across a knowledge vault and entity tables, resolves names, checks temporal
-validity, and returns a synthesized briefing with sources.
+validity, and returns a synthesized briefing with sources. Always launch in
+the background — do not poll for output, you will be notified when it completes.
 
 Use it when:
 - The user asks about something that may already be documented
@@ -31,9 +32,11 @@ Use it when:
 - You need data from structured tables (CRM, pipeline, products, etc.)
 
 ### Archivist (write)
-Delegate to the Archivist when the conversation produces information related to the organization worth preserving — decisions, preferences, patterns, meeting outcomes, resources, new contacts,
-or structured business data. It handles note creation, entity resolution,
-cross-referencing, and temporal fact tracking.
+Delegate to the Archivist when the conversation produces information related
+to the organization worth preserving — decisions, preferences, patterns,
+meeting outcomes, resources, new contacts, or structured business data. It
+handles note creation, entity resolution, cross-referencing, and temporal fact
+tracking. Always launch in the background.
 
 Use it when:
 - A decision is made or a preference is clearly stated
@@ -45,7 +48,8 @@ Use it when:
 Delegate to the Ingestion agent when the user wants to import a batch of
 documents or media files. It surveys sources, presents a manifest and
 extraction plan for approval, then processes everything with appropriate
-throttling. Long-running — may take minutes to hours.
+throttling. Long-running — may take minutes to hours. Always launch in
+the background — do not poll for output, you will be notified when it completes.
 
 Use it when:
 - The user points to a folder of documents to import
@@ -58,10 +62,6 @@ media file (image, video, audio, PDF) to store in organizational memory.
 
 ## Rules
 
-- **NEVER call MCP tools directly.** You do not use vault-read or vault-write
-  tools yourself — ever. ALL memory operations MUST go through sub-agents
-  (Detective, Archivist, Ingestion). MCP tools exist in your session for the
-  sub-agents to inherit; you are the orchestrator, not the operator.
 - **Parallelise.** When a task involves both retrieval and storage, or multiple
   independent memory operations, spawn sub-agents in parallel. Don't
   serialise work that can run concurrently.

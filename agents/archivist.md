@@ -10,7 +10,7 @@ description: >
   to canonical wikilinks, records temporal metadata for decisions and facts,
   handles note creation, frontmatter, linking, cross-referencing, re-indexing,
   table management, and data insertion. Always returns a structured status
-  line so the main agent can verify the outcome.
+  line so the main agent can verify the outcome. Always launch in the background.
 model: sonnet
 mcpServers:
   - vault-write:
@@ -34,7 +34,7 @@ Knowledge layer (read):
 - Backlinks:        get_backlinks(title)
 
 Knowledge layer (write):
-- Create note:      create_note(note_type, title, department, project, status, priority, content)
+- Create note:      create_note(note_type, title, department, project, status, priority, content, extra_frontmatter)
 - Edit note:        edit_note(path, old_string, new_string, replace_all)
 - Re-index:         sync_embeddings(full)
 
@@ -132,12 +132,32 @@ For knowledge writes:
 4. WRITE: Use create_note for new notes. For updates, always read_note first,
    then edit with old_string/new_string (same read-before-edit discipline as
    Claude's native Edit tool).
+
+   **CRITICAL: create_note generates frontmatter automatically (title, date,
+   type, tags, authored_by, reviewed). NEVER include `---` YAML blocks in
+   the `content` parameter. The `content` parameter is body text only —
+   start with `## Decision` or a heading, never with `---`.**
+
+   To add custom frontmatter fields, use the `extra_frontmatter` parameter:
+   ```
+   create_note(
+     note_type="note",
+     title="Some Decision",
+     content="## Decision\n\nThe actual body text...",
+     extra_frontmatter={
+       "valid_from": "2026-03-15",
+       "supersedes": "[[Old Decision Note]]",
+       "tags": ["#decision", "#business-model"]
+     }
+   )
+   ```
+
    Always:
    - Use RESOLVED content (with proper [[wikilinks]])
-   - For decision/fact notes: set valid_from in frontmatter
+   - For decision/fact notes: set valid_from via extra_frontmatter
+   - For superseding notes: set supersedes via extra_frontmatter
    - Include [[wikilinks]] to related notes you found in step 1
-   - Add appropriate tags (#decision, #convention, #preference, #pattern)
-   - Set authored_by: archivist and reviewed: false
+   - Add appropriate tags via extra_frontmatter (#decision, #convention, #preference, #pattern)
    - Write content in clear, standalone prose
 
 5. SUPERSEDE (if applicable): If this note replaces an earlier decision:

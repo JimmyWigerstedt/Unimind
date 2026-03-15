@@ -9,9 +9,8 @@ description: >
   extraction plan for user review, then executes by delegating to Archivists.
   Supports text documents AND media files (video, audio, images, PDFs).
   Supports incremental re-ingestion using saved manifests to detect changes.
-  Long-running — may take minutes to hours for large batches. Always runs
-  in the foreground until the user approves the manifest, then can continue
-  in the background for the upload/ingest loop.
+  Long-running — may take minutes to hours for large batches. Always launch
+  in the background.
 model: sonnet
 mcpServers:
   - vault-read:

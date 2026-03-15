@@ -7,8 +7,7 @@ description: >
   documented, or query structured business data (CRM, pipeline, products).
   Resolves ambiguous names, checks temporal validity, triangulates across
   semantic search, keyword search, link-graph traversal, and entity queries,
-  then returns a synthesised briefing. Launch in background when the answer
-  isn't blocking the current task.
+  then returns a synthesised briefing. Always launch in the background.
 model: sonnet
 mcpServers:
   - vault-read:
