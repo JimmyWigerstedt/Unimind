@@ -1,0 +1,10 @@
+{
+  "name": "outreach-engine",
+  "version": "0.1.0",
+  "description": "Placeholder — automated outreach sequences and follow-up management.",
+  "author": {
+    "name": "Revenue AI Agency"
+  },
+  "license": "MIT",
+  "keywords": ["outreach", "email", "sequences"]
+}

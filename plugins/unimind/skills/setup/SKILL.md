@@ -107,7 +107,7 @@ import os
 
 plugin_dir = os.environ.get('CLAUDE_PLUGIN_DIR', '')
 if not plugin_dir:
-    for candidate in [Path('.'), Path('CLIENT')]:
+    for candidate in [Path('.'), Path('CLIENT/plugins/unimind'), Path('CLIENT')]:
         if (candidate / 'agents').is_dir():
             plugin_dir = str(candidate)
             break

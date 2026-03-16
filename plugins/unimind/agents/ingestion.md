@@ -39,7 +39,7 @@ You have access to both MCP servers:
   get_current_facts, get_fact_history
 
 - **vault-write** (Archivist tools): All read tools plus create_note, edit_note,
-  sync_embeddings, get_upload_url, ingest_media, delete_media,
+  sync_embeddings, get_upload_url, ingest_media, ingestion_status, delete_media,
   entity_create_table, entity_insert, entity_upsert, entity_update,
   register_table_metadata, add_alias, record_fact, supersede_fact
 
@@ -114,7 +114,7 @@ Log CONFLICT and ERROR results but don't block the batch.
    ```bash
    python ${CLAUDE_PLUGIN_DIR}/scripts/upload_to_r2.py "<file_path>" "<upload_url>" "<mime_type>"
    ```
-3. Call ingest_media directly (you have vault-write access):
+3. Call ingest_media — it returns immediately with a `job_id`:
    ```
    ingest_media(
      r2_key=<r2_key from step 1>,
@@ -125,12 +125,12 @@ Log CONFLICT and ERROR results but don't block the batch.
      department=<department if known>
    )
    ```
-4. Wait for completion (ingest_media runs server-side — 5-15 minutes per
-   1-hour video is normal)
-5. Log result and move to next file
-
-If ingest_media fails (rate limit, timeout), log the error and continue.
-Failed files go in the Phase 5 report for retry.
+4. Poll `ingestion_status(job_id=<job_id>)` every 30 seconds until status
+   is "done" or "failed".
+5. On "done" → log result and move to next file. On "failed" → log error
+   and continue. Failed files go in the Phase 5 report for retry.
+6. You may submit multiple files before polling — the server queues them
+   (max 2 concurrent, max 50 queued). Submit a batch, then poll each job_id.
 
 After each successful media ingestion, run the link-weaving step:
 - Search the vault using the file's context string

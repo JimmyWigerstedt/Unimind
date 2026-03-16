@@ -1,0 +1,10 @@
+{
+  "name": "pipeline-ops",
+  "version": "0.1.0",
+  "description": "Placeholder — sales pipeline automation and deal tracking tools.",
+  "author": {
+    "name": "Revenue AI Agency"
+  },
+  "license": "MIT",
+  "keywords": ["pipeline", "crm", "automation"]
+}

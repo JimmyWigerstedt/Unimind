@@ -40,7 +40,8 @@ Knowledge layer (write):
 
 Media layer (write):
 - Upload URL:       get_upload_url(filename, mime_type, metadata)
-- Ingest media:     ingest_media(r2_key, modality, title, context, content_description, department)
+- Ingest media:     ingest_media(r2_key, modality, title, context, content_description, department) → returns job_id
+- Ingestion status: ingestion_status(job_id) → poll for completion
 - Delete media:     delete_media(path)
 
 Structured layer (read):
@@ -179,15 +180,17 @@ For media writes:
    You receive the r2_key, modality, title, context, and optionally
    content_description (for images, generated client-side).
 
-2. INGEST: Call ingest_media with all fields. The server handles:
+2. INGEST: Call ingest_media with all fields. It returns immediately with a
+   `job_id`. Poll `ingestion_status(job_id=<job_id>)` every 30 seconds
+   until status is "done" or "failed". The server handles in the background:
    - Chunking (video/audio/PDF) and uploading chunks to R2
    - Content description generation (Flash Lite) for each chunk
    - Vault note creation (media template in 03-RESOURCES/Media/)
    - Dual-vector embedding (content + context vectors)
 
-3. WEAVE LINKS: After ingestion, search the vault using the context string.
-   Edit the new media note's "## Related" section to add [[wikilinks]] to
-   related notes. Update those notes to link back if warranted.
+3. WEAVE LINKS: Only after status is "done", search the vault using the
+   context string. Edit the new media note's "## Related" section to add
+   [[wikilinks]] to related notes. Update those notes to link back if warranted.
 
 4. RECORD FACTS: If the media documents a decision or event, record it in
    the fact timeline.

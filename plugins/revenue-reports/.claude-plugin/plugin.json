@@ -1,0 +1,10 @@
+{
+  "name": "revenue-reports",
+  "version": "0.1.0",
+  "description": "Placeholder — revenue analytics, forecasting, and reporting dashboards.",
+  "author": {
+    "name": "Revenue AI Agency"
+  },
+  "license": "MIT",
+  "keywords": ["revenue", "analytics", "reporting"]
+}

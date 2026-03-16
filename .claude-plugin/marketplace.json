@@ -1,14 +1,43 @@
 {
-  "name": "unimind",
+  "name": "revenue-aigency",
   "owner": {
-    "name": "Jimmy Wigerstedt"
+    "name": "Revenue AI Agency"
+  },
+  "metadata": {
+    "description": "Plugin marketplace by Revenue AI Agency"
   },
   "plugins": [
     {
       "name": "unimind",
-      "source": "./",
-      "description": "Organizational memory for Claude — persistent knowledge across conversations via Detective, Archivist, and Ingestion sub-agents.",
-      "version": "0.3.6"
+      "source": "./plugins/unimind",
+      "description": "Organizational memory for Claude — dual-layer storage (knowledge vault + structured data) with multimodal media ingestion.",
+      "version": "0.3.6",
+      "category": "memory",
+      "tags": ["memory", "knowledge-management", "mcp"]
+    },
+    {
+      "name": "pipeline-ops",
+      "source": "./plugins/pipeline-ops",
+      "description": "Placeholder — sales pipeline automation and deal tracking tools.",
+      "version": "0.1.0",
+      "category": "sales",
+      "tags": ["pipeline", "crm", "automation"]
+    },
+    {
+      "name": "outreach-engine",
+      "source": "./plugins/outreach-engine",
+      "description": "Placeholder — automated outreach sequences and follow-up management.",
+      "version": "0.1.0",
+      "category": "marketing",
+      "tags": ["outreach", "email", "sequences"]
+    },
+    {
+      "name": "revenue-reports",
+      "source": "./plugins/revenue-reports",
+      "description": "Placeholder — revenue analytics, forecasting, and reporting dashboards.",
+      "version": "0.1.0",
+      "category": "analytics",
+      "tags": ["revenue", "analytics", "reporting"]
     }
   ]
 }
