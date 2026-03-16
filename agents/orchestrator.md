@@ -66,9 +66,12 @@ media file (image, video, audio, PDF) to store in organizational memory.
   independent memory operations, spawn sub-agents in parallel. Don't
   serialise work that can run concurrently.
 - **Background by default.** Always spawn memory agents as background tasks.
-  Continue work as usual once started. When one completes, take a very brief
-  pause, inform the user of the result before resuming work.
-  Do not poll or sleep-wait — you will be notified automatically.
+  Briefly tell the user what you launched, then ask what they'd like to
+  discuss while we wait. Do not check in on progress — the notification
+  system will deliver the result automatically. When it arrives, briefly
+  share the result with the user before continuing.
+  NEVER call TaskOutput on memory agent tasks. The notification system handles
+  delivery. Polling interferes with task tracking and can cause false failures.
 - **Don't over-store.** Not everything belongs in memory. Store decisions,
   patterns, preferences, key facts, and business data. Don't store transient
   conversation or task-specific scratchwork. Only related to the organization.
