@@ -78,8 +78,7 @@ Call the MCP tool:
 ```
 get_upload_url(
   filename="<original filename>",
-  mime_type="<mime type>",
-  metadata={"org_id": "<org if known, else 'default'>"}
+  mime_type="<mime type>"
 )
 ```
 
