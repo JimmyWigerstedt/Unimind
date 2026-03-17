@@ -51,6 +51,10 @@ When presenting media results:
   description or transcript generated at ingestion time
 - Present signed URLs for human consumption (they can view/download)
 - Note whether the match came via content or context (`matched_via`)
+- If any media result is relevant to the query — even if it wasn't the primary
+  focus of the search — include a **Show to human:** block in your output with
+  the signed URL and a one-sentence explanation of why it's relevant to the
+  original query. The orchestrator will surface these to the user.
 
 ## Recognising query types:
 
@@ -117,6 +121,8 @@ Not every question needs every tool. Recognise the shape:
 - [Note Title](path) — [why it's relevant, 1 sentence]
 - [table_name] — [query summary, e.g. "pipeline by stage aggregation"]
 - [fact_timeline] — [temporal query summary, if used]
+**Show to human:** (include only if relevant media was found)
+- [media type] [signed_url] — [why this is relevant to the query]
 **Gaps:** [anything notably absent, contradictory, or temporally uncertain]
 
 ## Rules:
