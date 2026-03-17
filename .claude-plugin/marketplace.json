@@ -11,7 +11,7 @@
       "name": "unimind",
       "source": "./plugins/unimind",
       "description": "Organizational memory for Claude — dual-layer storage (knowledge vault + structured data) with multimodal media ingestion.",
-      "version": "0.4.1",
+      "version": "0.4.2",
       "category": "memory",
       "tags": ["memory", "knowledge-management", "mcp"]
     },

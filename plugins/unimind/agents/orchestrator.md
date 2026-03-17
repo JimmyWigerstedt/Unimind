@@ -67,6 +67,21 @@ to upload it. Ask the user for the file path before delegating. Example:
 "I can see the image — to store it in memory I need the file path on disk.
 Where is this file located?"
 
+**Gather context before delegating media.** The Ingestion agent runs in the
+background and cannot ask the user questions. Your job is to collect everything
+it needs upfront so it can work unimpeded. Before delegating media files
+(video, audio, images — not PDFs, which are self-describing), ask the user:
+
+1. **Why are these files being saved?** What organizational purpose do they
+   serve? What kind of searches should surface them? (e.g. "team-building
+   event", "product demo for Q2 launch", "client onboarding walkthrough")
+2. **Grouping** — if multiple files, do they share context or should some
+   be grouped differently? (e.g. "these 10 are all from the same retreat,
+   but these 3 are from a different client meeting")
+
+Pass the gathered context to the Ingestion agent in your delegation prompt
+so it can assign context strings to groups without needing user interaction.
+
 ## Rules
 
 - **Parallelise.** When a task involves both retrieval and storage, or multiple

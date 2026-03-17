@@ -81,12 +81,39 @@ Produce a manifest and present it to the user. Wait for approval.
 If this is a re-ingestion: load the previous manifest, compare file hashes,
 produce delta plans for modified files, skip unchanged files.
 
-**For media files:** Group files by shared context:
-- Identify logical groups from filenames, folder structure, timestamps, and
-  user-provided context (e.g., "all sprint retro recordings", "office photos")
-- Assign a single context string per group
-- Ask the user to confirm or adjust groups and their context
-- This is ONE conversation — not per-file interrogation
+**For media files:** Group files and assign context strings.
+
+The orchestrator gathers context from the user before delegating to you.
+Use that pre-gathered context — do not re-ask the user for it.
+
+- **Default: each file gets its own context string.** Every file has a
+  distinct organizational purpose and must be independently findable.
+- **Exception:** files that are genuinely part of the same event or set
+  (e.g. 20 photos from one retreat, 3 recordings from the same meeting)
+  may share a context string. Only group when the files would surface for
+  the exact same searches.
+- Derive each context string from the orchestrator-supplied context,
+  tailored to the specific file using its filename, folder, and any other
+  available signal.
+
+**Context strings must create a strong semantic footprint.** The context
+string becomes the context vector — it's what makes the media findable for
+organizational queries that the raw content won't match. A cookoff video's
+content vector will match "food" and "cooking", but the context vector is
+what makes it surface for "team-building" and "HR" searches.
+
+Write context strings as a natural-language sentence packed with the terms
+people would actually search for. Include:
+- The organizational purpose (why this was saved)
+- Department / function relevance (HR, sales, product, etc.)
+- The type of activity (team-building, client demo, training, etc.)
+- Related projects, events, or initiatives if known
+
+Bad: `"team cookoff"`
+Good: `"HR team-building retreat — annual company cookoff event, employee engagement, culture, morale"`
+
+Bad: `"product video"`
+Good: `"Product demo for Q2 launch of Project Atlas, sales enablement, customer-facing walkthrough"`
 
 **For images you can see** (attached in conversation, not just file paths):
 generate a content_description for each. For file paths you can't see, leave
@@ -108,13 +135,28 @@ Process documents sequentially. Pause 1-2s between Archivist calls.
 Longer pause (5s) after every 10 calls.
 Log CONFLICT and ERROR results but don't block the batch.
 
-**For media files, for each file:**
-1. Call get_upload_url(filename, mime_type) for a presigned R2 URL (1-hour expiry)
-2. Run the shared upload script to stream the file to R2 (may take minutes for large video):
+**For media files — pipeline mode (upload → fire → next):**
+
+`ingest_media` is fire-and-forget: it returns a `job_id` immediately and
+processes asynchronously on the server (max 2 concurrent, max 50 queued).
+The R2 upload is the real bottleneck, so the strategy is: upload one file,
+fire its ingestion, then immediately start uploading the next file while
+previous ingestions run server-side. Do NOT batch-upload all files first.
+
+For each file:
+1. Call `get_upload_url(filename, mime_type)` for a presigned R2 URL (1-hour expiry)
+2. Upload the file to R2 (may take minutes for large video):
    ```bash
-   python ${CLAUDE_PLUGIN_DIR}/scripts/upload_to_r2.py "<file_path>" "<upload_url>" "<mime_type>"
+   python "$UPLOAD_SCRIPT" "<file_path>" "<upload_url>" "<mime_type>"
    ```
-3. Call ingest_media — it returns immediately with a `job_id`:
+   `$CLAUDE_PLUGIN_DIR` may not be set in bash. At the start of Phase 3,
+   resolve the script path once and reuse it:
+   ```bash
+   UPLOAD_SCRIPT="${CLAUDE_PLUGIN_DIR:+${CLAUDE_PLUGIN_DIR}/scripts/upload_to_r2.py}"
+   UPLOAD_SCRIPT="${UPLOAD_SCRIPT:-$(find / -path '*/unimind/scripts/upload_to_r2.py' -print -quit 2>/dev/null)}"
+   ```
+3. As soon as the upload completes, fire `ingest_media` — it returns immediately
+   with a `job_id`. Record the job_id and the file size, then move on:
    ```
    ingest_media(
      r2_key=<r2_key from step 1>,
@@ -125,15 +167,22 @@ Log CONFLICT and ERROR results but don't block the batch.
      department=<department if known>
    )
    ```
-4. Poll `ingestion_status(job_id=<job_id>)` every 30 seconds until status
-   is "done" or "failed".
-5. On "done" → log result and move to next file. On "failed" → log error
-   and continue. Failed files go in the Phase 5 report for retry.
-6. You may submit multiple files before polling — the server queues them
-   (max 2 concurrent, max 50 queued). Submit a batch, then poll each job_id.
+4. Immediately proceed to step 1 for the next file. Do not wait for ingestion
+   to finish before starting the next upload.
+5. After all files are uploaded and fired, poll using `ingestion_status()`
+   (no job_id = dashboard of all jobs). Use adaptive intervals:
+   - Small files (<50 MB): poll every 15s
+   - Medium files (50-500 MB): poll every 30s
+   - Large files (>500 MB): poll every 60s
+   When a job completes, the response includes a `result` object with
+   `chunks` (count), `path` (vault path), and `ms` (processing time).
+   Log failures for the Phase 5 report.
 
-After each successful media ingestion, run the link-weaving step:
-- Search the vault using the file's context string
+After all ingestions complete, run the link-weaving step for each successful
+media note:
+- Search the vault using the file's context string via `semantic_search`
+- Use the **exact paths returned by the search** for wikilinks — never
+  write [[wikilinks]] from memory or guessed note titles
 - Edit the new media note's "## Related" section to add [[wikilinks]]
 - Update related notes to link back if warranted
 
@@ -141,8 +190,8 @@ After each successful media ingestion, run the link-weaving step:
 After all items are processed:
 - Query for all notes created in this ingestion session
   (filter by ingestion_id or authored_by: archivist + recent timestamp)
-- Check for missing links between new notes (including media notes) and
-  existing vault content
+- For each new note, run `semantic_search` to find related existing notes
+- Use only the **exact paths from search results** as wikilink targets
 - Fire targeted edit_note calls to add wikilinks with contextual prose
 
 ### PHASE 5 — REPORT
@@ -174,6 +223,17 @@ with type: note, tags: [ingestion, report] and [ingestion, manifest].
 | **Photos** (images) | Upload + ingest with group context -> media notes |
 | **PDF document** | Upload + ingest (self-describing) -> media note |
 
+## Pre-flight check
+
+Before starting a batch, send one lightweight probe call (e.g. `vault_status`
+via vault-read) to verify connectivity. This catches misconfigurations before
+they interrupt a batch mid-run.
+
+## Error handling
+
+- **Do not retry:** 400, 401, 406, 415 — these are client bugs, fix the request
+- **Retry up to 3 times (wait 10-30s):** 429, 503, 504
+
 ## Rules:
 - NEVER extract without showing the user the manifest and plan first
 - NEVER pass full documents to Archivists — send relevant sections only
@@ -183,6 +243,7 @@ with type: note, tags: [ingestion, report] and [ingestion, manifest].
 - ALWAYS save the manifest permanently (needed for re-ingestion diffs)
 - ALWAYS self-throttle: 1-2s between text Archivist calls, 5s every 10 calls
 - ALWAYS show estimated API cost for media in the manifest before proceeding
-- ALWAYS gather media context per-group, never per-file interrogation
+- ALWAYS assign each media file its own context string unless files genuinely share one
 - If a document is too large for one read, process it section by section
 - If a media ingest fails, log it and continue — don't block the batch
+- NEVER write [[wikilinks]] from memory — always query the vault for exact paths first
