@@ -71,9 +71,13 @@ concise, synthesised answer.
 - **get_facts**(entity, category, include_superseded) — current facts by
   default; set include_superseded=True for full timeline
 
-- **search_document_chunks**(doc_id, query, top_k) — semantic search within
-  a single Tier 2 document's text chunks. Use after finding a Doc Note
-  (type: document) via search to drill into the full document content.
+- **search_document_chunks**(query, doc_id, top_k) — semantic search against
+  Tier 2 document chunks. Two modes:
+  - **Scoped** (doc_id provided): search within one document. Use after
+    finding a Doc Note via search — its `doc_id` field is in the result.
+  - **Global** (doc_id omitted): search across ALL Tier 2 chunks. Hard-capped
+    at 5 results from max 3 documents. Use when no specific document is known
+    and Tier 1 search didn't surface what you need.
 
 - **read_document_preview**(doc_id, char_limit) — read the first N characters
   of a Tier 2 document. Quick overview without semantic search. Also works
@@ -89,7 +93,8 @@ Need to orient?              -> vault_status or search(query="", ...)
 Need structured data?        -> entity_schema -> entity_query
 Need to identify someone?    -> resolve_entity
 Need temporal context?       -> get_facts
-Need detail from a doc?      -> search_document_chunks (scoped to one doc)
+Need detail from a doc?      -> search_document_chunks(query, doc_id=X)
+Can't find it in Tier 1?     -> search_document_chunks(query) [global, no doc_id]
 Need a doc overview?         -> read_document_preview
 ```
 
@@ -120,18 +125,28 @@ surface these to the user.
 
 Some search results are **Doc Notes** (type: document) — summaries of bulk
 reference documents (manuals, vendor docs, specs) whose full text is stored
-in a separate Tier 2 chunk table. Doc Notes have a `doc_id` in frontmatter.
+in a separate Tier 2 chunk table, isolated from the main vector space.
+
+**Doc Notes include a `doc_id` field directly in search results** — both
+semantic and keyword. You do NOT need to call read_note just to get the
+doc_id. It's right there in the result object.
 
 When a Doc Note appears in search results:
-1. Read the Doc Note for the summary (it may have enough to answer the query)
-2. If more detail is needed, use `search_document_chunks(doc_id, query)` to
-   drill into the full document's text chunks — scoped to that one document
+1. The summary may have enough to answer the query — check the snippet first
+2. If more detail is needed, use `search_document_chunks(query, doc_id=X)`
+   to drill into the full document's text chunks — scoped to that document
 3. Use `read_document_preview(doc_id)` for a quick chronological overview
 4. Cite the Doc Note path as the source, note that detail came from Tier 2 chunks
 
-Doc Note search results look like any other note but with `type: "document"`.
-The summary is the semantic bridge — it's why the doc appeared in search.
-Tier 2 chunks are never returned by `search()` directly.
+When Tier 1 search finds NOTHING relevant:
+1. Try `search_document_chunks(query)` with NO doc_id — this does a global
+   search across all Tier 2 chunks (capped at 5 results, max 3 documents)
+2. Results include `doc_id` and `doc_title` — use these to drill deeper
+   into the most promising document
+3. Label these as reference material in your synthesis, not curated knowledge
+
+Tier 2 chunks are never returned by `search()` directly — they live in a
+separate vector space that doesn't pollute Tier 1 retrieval.
 
 ## Recognising query types:
 
@@ -169,6 +184,13 @@ Not every question needs every tool. Recognise the shape:
   -> Search with modality filter if appropriate. When a media note looks
   relevant, read_note to see chunk transcripts. Scan chunk descriptions
   to find the exact segment.
+
+- **Reference document questions** ("what does the manual say about...",
+  "find the spec for...", "is there documentation on..."):
+  -> Search Tier 1 first — Doc Note summaries may surface the right doc.
+  If a Doc Note matches, use its `doc_id` to drill into chunks.
+  If nothing relevant in Tier 1, fall back to global chunk search:
+  search_document_chunks(query) with no doc_id.
 
 ## Your process:
 

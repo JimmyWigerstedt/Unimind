@@ -34,7 +34,7 @@ Knowledge layer (read):
 - Read note:        read_note(path)
 - Backlinks:        get_backlinks(title)
 - Doc preview:      read_document_preview(doc_id, char_limit) — read first N chars of a Tier 2 document
-- Doc chunk search: search_document_chunks(doc_id, query, top_k) — semantic search within a single document
+- Doc chunk search: search_document_chunks(query, doc_id, top_k) — semantic search within a document (doc_id required for enrichment)
 
 Knowledge layer (write):
 - Create note:      create_note(note_type, title, department, project, status, priority, content, extra_frontmatter, sync)
