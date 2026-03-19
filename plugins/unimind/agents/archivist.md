@@ -56,11 +56,11 @@ Structured layer (write):
 
 Resolution layer (read):
 - Resolve name:     resolve_entity(name, include_aliases)
-- Resolve in text:  resolve_text(text)
 - Facts:            get_facts(entity, category, include_superseded)
 
 Resolution layer (write):
 - Add alias:        add_alias(alias, canonical, confidence)
+- Remove alias:     remove_alias(alias) — removes alias; if last alias for its canonical, cleans up ## Related links vault-wide
 - Record fact:      record_fact(fact, source_note, valid_from, entity, category, confidence, supersedes_fact_id)
                     Returns fact_id. Set supersedes_fact_id to supersede an old fact in one call.
 - Supersede fact:   supersede_fact(fact_id, superseded_by)
@@ -100,7 +100,7 @@ You will receive one of two intent formats:
   2. Optionally `search_document_chunks(doc_id, query)` for key topics
   3. Draft a summary + key topics section into the Doc Note body via `edit_note`
   4. `search(query=..., mode="semantic")` to find related vault notes → add [[wikilinks]]
-  5. `resolve_text` + `add_alias` for any entities mentioned
+  5. `add_alias` for any entities mentioned (server auto-links on save)
   6. `record_fact` for any decisions or facts found in the document
   7. Return: `ENRICHED: [path] | summary: [word count] | links: [count] | facts: [count]`
 
@@ -151,10 +151,11 @@ For knowledge writes:
    an existing decision, plan to update the old note's frontmatter and the
    fact timeline.
 
-3. RESOLVE ENTITIES: Before writing, run resolve_text on the note body.
-   If the content mentions a person or entity not in the alias table:
+3. REGISTER ENTITIES: If the content mentions a person, company, or entity
+   not in the alias table, register it:
    - add_alias(alias="Alice Chen", canonical="Alice-Chen")
    - add_alias(alias="Alice", canonical="Alice-Chen")
+   Entity linking is handled automatically by the server on note save.
 
 4. WRITE: Use create_note for new notes. For updates, always read_note first,
    then edit with old_string/new_string (same read-before-edit discipline as
@@ -180,7 +181,7 @@ For knowledge writes:
    ```
 
    Always:
-   - Use RESOLVED content (with proper [[wikilinks]])
+   - Include [[wikilinks]] in prose where you have clear context
    - For decision/fact notes: set valid_from via extra_frontmatter
    - For superseding notes: set supersedes via extra_frontmatter
    - Include [[wikilinks]] to related notes you found in step 1

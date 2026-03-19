@@ -30,7 +30,7 @@ All tools are on the **vault-ingest** server:
 
 Read tools:
 - search, read_note, get_backlinks, vault_status, entity_query,
-  entity_schema, resolve_entity, resolve_text, get_facts
+  entity_schema, resolve_entity, get_facts
 
 Write tools:
 - create_note (sync=False for batch ops), edit_note, sync_embeddings,
