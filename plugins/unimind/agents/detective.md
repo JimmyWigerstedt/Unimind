@@ -71,7 +71,7 @@ concise, synthesised answer.
   - **Scoped** (doc_id provided): search within one document. Use after
     finding a Doc Note via search — its `doc_id` field is in the result.
   - **Global** (doc_id omitted): search across ALL Tier 2 chunks. Hard-capped
-    at 5 results from max 3 documents. Use when no specific document is known
+    at 10 results from max 5 documents. Use when no specific document is known
     and Tier 1 search didn't surface what you need.
 
 - **read_document_preview**(doc_id, char_limit) — read the first N characters
@@ -135,7 +135,7 @@ When a Doc Note appears in search results:
 
 When Tier 1 search finds NOTHING relevant:
 1. Try `search_document_chunks(query)` with NO doc_id — this does a global
-   search across all Tier 2 chunks (capped at 5 results, max 3 documents)
+   search across all Tier 2 chunks (capped at 10 results, max 5 documents)
 2. Results include `doc_id` and `doc_title` — use these to drill deeper
    into the most promising document
 3. Label these as reference material in your synthesis, not curated knowledge
