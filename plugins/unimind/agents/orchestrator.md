@@ -105,8 +105,8 @@ Each agent needs focused context to enrich files well. Use these guidelines:
 
 | Modality | Files per agent |
 |---|---|
-| Images | 20-30 |
-| Text docs / PDFs | 10-15 |
+| Images | 10 |
+| Text docs / PDFs | 8 |
 | Video / audio | 3-5 |
 | Tier 1 text (meeting notes, decisions) | 5-8 |
 
