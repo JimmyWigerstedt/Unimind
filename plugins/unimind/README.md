@@ -6,11 +6,11 @@ centralized MCP server provide persistent knowledge across conversations.
 ## What's Included
 
 - **Orchestrator** (`agents/orchestrator.md`) — Replaces the default Claude system prompt with a general-purpose assistant that knows when to delegate to memory agents. Keeps the main context lean.
-- **Detective agent** (`agents/detective.md`) — Read-only retrieval across the knowledge vault and structured data layer. 13 MCP tools. Returns synthesized briefings with sources.
-- **Archivist agent** (`agents/archivist.md`) — Write agent for cataloguing decisions, preferences, patterns, structured business data, and media files. 23 MCP tools.
-- **Ingestion agent** (`agents/ingestion.md`) — All file imports — single files or bulk batches. Surveys sources, produces a manifest for user approval, then processes everything. Handles text docs, video, audio, images, and PDFs.
+- **Detective agent** (`agents/detective.md`) — Read-only retrieval across the knowledge vault and structured data layer. 10 MCP tools. Returns synthesized briefings with sources.
+- **Archivist agent** (`agents/archivist.md`) — Write agent for cataloguing decisions, preferences, patterns, and structured business data from conversation. 20 MCP tools. Knowledge writes only — no file handling.
+- **Ingestion agent** (`agents/ingestion.md`) — All file imports — single files or bulk batches. Uploads, processes, and enriches every file inline (entity extraction, summaries, fact recording). 24 MCP tools.
 
-MCP servers are defined inline in each agent's frontmatter — no tool descriptions are loaded into the main conversation context.
+All three agents operate independently — no agent spawns another. MCP servers are defined inline in each agent's frontmatter — no tool descriptions are loaded into the main conversation context.
 
 ## Installation
 
@@ -42,6 +42,19 @@ memory. It will automatically delegate to memory agents when needed:
 - **Bulk import**: "Ingest everything in /onboarding-docs/"
 - **File import**: "Store this PDF in memory" or "Ingest path/to/video.mp4"
 
+## Architecture
+
+```
+Orchestrator (main system prompt, lean router)
+  ├── Detective    — read-only retrieval (vault-read MCP endpoint)
+  ├── Archivist    — knowledge writes from conversation (vault-write MCP endpoint)
+  └── Ingestion    — file upload + processing + inline enrichment (vault-ingest MCP endpoint)
+```
+
+All agents run in the background. The Orchestrator routes tasks and relays
+results. For large file batches, the Orchestrator splits work across multiple
+parallel Ingestion agents.
+
 ## Files
 
 | File | Purpose |
@@ -50,8 +63,8 @@ memory. It will automatically delegate to memory agents when needed:
 | `settings.json` | Activates the orchestrator as the main agent |
 | `agents/orchestrator.md` | Main agent — general-purpose assistant with delegation rules |
 | `agents/detective.md` | Detective sub-agent (read-only retrieval) |
-| `agents/archivist.md` | Archivist sub-agent (write operations) |
-| `agents/ingestion.md` | Ingestion sub-agent (single and bulk file import) |
+| `agents/archivist.md` | Archivist sub-agent (knowledge writes from conversation) |
+| `agents/ingestion.md` | Ingestion sub-agent (file import + inline enrichment) |
 | `skills/setup/SKILL.md` | First-time setup wizard |
 | `scripts/upload_to_r2.py` | Shared R2 upload script (used by Ingestion agent) |
 
