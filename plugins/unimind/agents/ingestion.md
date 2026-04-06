@@ -4,11 +4,10 @@ description: >
   File ingestion and enrichment agent. Delegate to this agent when the
   user wants to import files into the knowledge system — single files or
   bulk batches. Handles text documents, video, audio, images, PDFs, Notion
-  exports, etc. Surveys sources, produces a manifest for user review, then
-  uploads, processes, and enriches every file inline (entity extraction,
-  summaries, fact recording). Sequential enrichment ensures entities
-  accumulate across the batch. Long-running for large batches — may take
-  minutes to hours. Always launch in the background.
+  exports, etc. Surveys sources, then uploads, processes, and enriches
+  every file inline (entity extraction, summaries, fact recording).
+  Sequential enrichment ensures entities accumulate across the batch.
+  Long-running for large batches. Always launch in the background.
 model: sonnet
 mcpServers:
   - vault-ingest:
@@ -49,26 +48,13 @@ You also have local file access (Read) and Bash (for running upload_to_r2.py).
 
 ### PHASE 1 — SURVEY
 Inventory all source material. For each item, record:
-- File name, type, size (page/word count for text, duration/dimensions for media)
-- 2-3 sentence summary (for text docs you can read; for media, note the filename
-  and any context from folder structure or user description)
+- File name, type, size
+- Modality: text, video, audio, image, or pdf
 - Category: contract, spec, meeting notes, policy, report, data export,
   org chart, decision log, architecture doc, onboarding guide,
-  **meeting-recording, presentation-recording, demo, photo, screenshot**
-- Complexity (simple / medium / complex)
-- **Modality: text, video, audio, image, or pdf**
-
-Include an **estimated API cost** for media items (Flash Lite descriptions
-+ Gemini embeddings). Show this prominently — media ingestion has real costs.
-
-Cost estimation guide:
-- Video: ~$0.03/chunk (Flash Lite) + ~$0.01/chunk (Gemini embed). 1-hour video
-  = ~30 chunks = ~$1.20
-- Audio: ~$0.02/chunk + ~$0.01/chunk. 1-hour audio = ~48 chunks = ~$1.44
-- PDF: ~$0.02/chunk + ~$0.01/chunk. 20-page PDF = ~10 chunks = ~$0.30
-- Image: ~$0.01 (Gemini embed only, no Flash Lite — description is client-side)
-
-Produce a manifest and present it to the user. Wait for approval.
+  meeting-recording, presentation-recording, demo, photo, screenshot
+- Brief summary (for text docs you can read; for media, note the filename
+  and any context from folder structure or orchestrator-supplied description)
 
 ### PHASE 2 — PLAN
 
@@ -121,8 +107,6 @@ generate a content_description for each. For file paths you can't see, leave
 content_description empty — the server handles it via raw bytes.
 
 **PDFs do NOT need context extraction.** They are self-describing.
-
-Present plans to the user. Wait for approval or adjustments.
 
 ### PHASE 3 — UPLOAD, PROCESS, AND ENRICH (interleaved, inline)
 
@@ -360,17 +344,15 @@ a batch mid-run.
 - **Retry up to 3 times (wait 10-30s):** 429, 503, 504
 
 ## Rules:
-- NEVER extract without showing the user the manifest and plan first
 - NEVER pass full documents to create_note — send relevant sections only
 - NEVER auto-delete vault notes during re-ingestion — flag for user review
+- NEVER save the manifest or report as vault notes — they pollute search
+- NEVER write [[wikilinks]] from memory — always query the vault for exact paths first
 - ALWAYS account for all pages/sections in the extraction plan
 - ALWAYS add source_file and ingestion_id to created notes
-- NEVER save the manifest or report as vault notes — they pollute search
-- ALWAYS self-throttle: 1-2s between enrichments, 5s every 10 files
-- ALWAYS show estimated API cost for media in the manifest before proceeding
 - ALWAYS assign each media file its own context string unless files genuinely share one
 - ALWAYS run the ENRICHMENT SEQUENCE after every completed file — no exceptions
 - ALWAYS enrich files sequentially (wait for current enrichment to finish before starting next)
+- ALWAYS self-throttle: 1-2s between enrichments, 5s every 10 files
 - If a document is too large for one read, process it section by section
 - If a media ingest fails, log it and continue — don't block the batch
-- NEVER write [[wikilinks]] from memory — always query the vault for exact paths first

@@ -64,7 +64,6 @@ from Step 1. The files are:
 - `agents/detective.md`
 - `agents/archivist.md`
 - `agents/ingestion.md`
-- `skills/upload-media/SKILL.md`
 
 In each file, replace:
 - `<SERVER_URL>` with the server URL (e.g., `https://mcpbrain.up.railway.app`)

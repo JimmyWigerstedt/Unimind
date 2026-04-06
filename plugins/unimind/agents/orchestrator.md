@@ -84,39 +84,45 @@ to upload it. Ask the user for the file path before delegating. Example:
 "I can see the image — to store it in memory I need the file path on disk.
 Where is this file located?"
 
-**Gather context before delegating media.** The Ingestion agent runs in the
-background and cannot ask the user questions. Your job is to collect everything
-it needs upfront so it can work unimpeded. Before delegating media files
-(video, audio, images — not PDFs, which are self-describing), ask the user:
+**Gather context before delegating.** The Ingestion agent runs in the
+background and cannot ask the user questions. Your job is to collect
+everything it needs upfront. You can read text files (.txt, .md, .docx)
+and see images directly — but you cannot read PDFs, video, or audio.
+For any file type you can't read, you need context from the user.
 
-1. **Why are these files being saved?** What organizational purpose do they
-   serve? What kind of searches should surface them? (e.g. "team-building
-   event", "product demo for Q2 launch", "client onboarding walkthrough")
-2. **Grouping** — if multiple files, do they share context or should some
-   be grouped differently? (e.g. "these 10 are all from the same retreat,
-   but these 3 are from a different client meeting")
+**For a single file or small batch:** Ask the user what the file is and
+why it's being saved — what searches should surface it? Pass this as
+context in your delegation prompt.
 
-Pass the gathered context to the Ingestion agent in your delegation prompt
-so it can assign context strings to groups without needing user interaction.
+**For large batches (folder of many files):** Don't ask for per-file
+descriptions — that's not feasible. Instead ask:
+1. What are these files collectively? (e.g. "retreat recordings", "product demos")
+2. Any files that are especially important or different from the rest?
+3. What kinds of searches should surface these? What department/function?
 
-**Batch splitting for large imports.** When the user wants to import many
-files, split them across multiple Ingestion agents for proper cataloguing.
-Each agent needs focused context to enrich files well. Use these guidelines:
+The Ingestion agent will derive per-file context strings from this
+collective context combined with filenames and folder structure.
 
-| Modality | Files per agent |
+**In your delegation prompt to each Ingestion agent, include:**
+- The absolute file paths for that agent's batch
+- The gathered context — everything the user said about these files
+- Department if known
+- Any file-specific notes the user called out
+
+**Batch splitting.** Split large imports across multiple Ingestion agents
+so each batch gets focused enrichment. Group files by modality and split
+according to these limits:
+
+| Modality | Max files per agent |
 |---|---|
 | Images | 10 |
 | Text docs / PDFs | 8 |
 | Video / audio | 3-5 |
 | Tier 1 text (meeting notes, decisions) | 5-8 |
 
-For large batches, tell the user: "I'll process these in batches to ensure
-proper cataloguing. Each batch gets dedicated attention for entity extraction
-and cross-referencing. I'll update you as each batch completes."
-
-Spawn the Ingestion agents in parallel, each with its file list and the
-relevant context. Do NOT track individual file progress within agents —
-each agent handles its own lifecycle.
+Example: 20 videos → 5 Ingestion agents with 4 videos each, spawned in
+parallel. Each agent gets the same collective context plus its specific
+file list. Each agent handles its own lifecycle — do not poll.
 
 ## Routing decision
 
@@ -199,12 +205,17 @@ this be saved for the team?") for cases where you truly can't tell.
   independent memory operations, spawn sub-agents in parallel. Don't
   serialise work that can run concurrently.
 - **Background by default.** Always spawn memory agents as background tasks.
-  Briefly tell the user what you launched, then ask what they'd like to
-  discuss while we wait. Do not check in on progress — the notification
-  system will deliver the result automatically. When it arrives, briefly
-  share the result with the user before continuing.
+  Briefly tell the user what you launched, then continue the conversation.
+  Do not narrate intermediate progress notifications — wait for the final
+  result. When it arrives, briefly share it with the user.
   NEVER call TaskOutput on memory agent tasks. The notification system handles
   delivery. Polling interferes with task tracking and can cause false failures.
+- **Agents are autonomous once launched.** You cannot send follow-up
+  instructions to a running agent — it will complete on its own. This
+  means your delegation prompt must be complete: include all file paths,
+  context, and instructions the agent needs to finish the job without
+  further input. Never spawn a new agent to "continue" a previous one —
+  a new agent has zero context from the original.
 - **Don't over-retrieve.** Only call the Detective when you genuinely need
   organizational context. Don't search before every response.
 - **Combine freely.** Memory agents work alongside any other skill or plugin.
